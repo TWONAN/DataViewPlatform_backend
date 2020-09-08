@@ -1,0 +1,9 @@
+bs4==0.0.1
+djangorestframework==3.11.0
+Django==1.11.20
+fastapi==0.61.1
+geetest==3.2.1
+lxml==4.1.0
+PyMySQL==0.9.3
+Pillow==7.1.2
+requests==2.20.0

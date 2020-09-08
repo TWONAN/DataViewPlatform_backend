@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+{#部署时可能需要去掉<!DOCTYPE html>，添加{% load staticfiles %}#}
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Reg</title>
+    <link rel="stylesheet" href="/static/bootstrap/css/bootstrap.min.css">
+    <style>
+        #img {
+            width: 80px;
+            height: 80px;
+        }
+
+        .container {
+            margin-top: 100px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-md-offset-3">
+            <form action="/api/reg/" class="form-horizontal reg-form" method="post" enctype="multipart/form-data"
+                  novalidate>
+                {% csrf_token %}
+                <div class="form-group {% if form_obj.username.errors.0 %}has-error{% endif %}">
+                    <label for="{{ form_obj.username.id_for_label }}" class="col-sm-2 control-label">
+                        {{ form_obj.username.label }}
+                    </label>
+                    <div class="col-sm-8">
+                        {{ form_obj.username }}
+                        <span class="help-block">{{ form_obj.username.errors.0 }}</span>
+                    </div>
+                </div>
+
+                <div class="form-group {% if form_obj.pwd.errors.0 %}has-error{% endif %}">
+                    <label for="{{ form_obj.pwd.id_for_label }}" class="col-sm-2 control-label">
+                        {{ form_obj.pwd.label }}
+                    </label>
+                    <div class="col-sm-8">
+                        {{ form_obj.pwd }}
+                        <span class="help-block">{{ form_obj.pwd.errors.0 }}</span>
+                    </div>
+                </div>
+
+                <div class="form-group {% if form_obj.re_pwd.errors.0 %}has-error{% endif %}">
+                    <label for="{{ form_obj.re_pwd.id_for_label }}" class="col-sm-2 control-label">
+                        {{ form_obj.re_pwd.label }}
+                    </label>
+                    <div class="col-sm-8">
+                        {{ form_obj.re_pwd }}
+                        <span class="help-block">{{ form_obj.re_pwd.errors.0 }}</span>
+                    </div>
+                </div>
+
+                <div class="form-group {% if form_obj.email.errors.0 %}has-error{% endif %}">
+                    <label for="{{ form_obj.email.id_for_label }}" class="col-sm-2 control-label">
+                        {{ form_obj.email.label }}
+                    </label>
+                    <div class="col-sm-8">
+                        {{ form_obj.email }}
+                        <span class="help-block">{{ form_obj.email.errors.0 }}</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-2 control-label">头像</label>
+                    <div class="col-sm-8">
+                        <label for="avatar-img"><img id="img" src="/static/img/hmbb.png" alt=""></label>
+                        <input accept="image/*" type="file" name="avatar" id="avatar-img">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button type="button" class="btn btn-success" id="reg-submit">注册</button>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/static/jquery-3.3.1.js"></script>
+<script src="/static/bootstrap/js/bootstrap.min.js"></script>
+<script>
+
+    $('#avatar-img').change(function () {
+        var FileImg = new FileReader();
+        FileImg.readAsDataURL(this.files[0]);
+        FileImg.onload = function () {
+            $('#img').attr('src', FileImg.result)
+        }
+    });
+
+    $("#reg-submit").click(function () {
+        // 取到用户填写的注册数据，向后端发送AJAX请求
+        var formData = new FormData();
+        formData.append("username", $('#id_username').val());
+        formData.append("pwd", $("#id_pwd").val());
+        formData.append("re_pwd", $("#id_re_pwd").val());
+        formData.append("email", $("#id_email").val());
+        formData.append("avatar", $("#avatar-img")[0].files[0]);
+        formData.append("csrfmiddlewaretoken", $("[name='csrfmiddlewaretoken']").val());
+
+        $.ajax({
+            url: "/api/reg/",
+            type: "post",
+            processData: false,
+            contentType: false,
+            data: formData,
+            success: function (data) {
+                if (data.code === 1001) {
+                    // 有错误就展示错误
+                    // console.log(data.msg);
+                    // 将报错信息填写到页面上
+                    $.each(data.msg, function (k, v) {
+                        // console.log("id_"+k, v[0]);
+                        // console.log($("#id_"+k));
+                        $("#id_" + k).next("span").text(v[0]).parent().parent().addClass("has-error");
+                    })
+
+                } else {
+                    // 没有错误就跳转到指定页面
+                    alert('注册成功');
+                    location.href = "http://127.0.0.1:8080/"
+                }
+            }
+        })
+    });
+    $("form input").focus(function () {
+        $(this).next().text("").parent().parent().removeClass("has-error");
+    })
+</script>
+</body>
+</html>

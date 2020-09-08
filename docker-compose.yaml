@@ -1,0 +1,22 @@
+version: "3.1"
+services:
+  new_visual:
+    working_dir: /app
+    command: uwsgi --ini uwsgi.ini
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: new_visual:latest
+    container_name: new_visual
+    restart: always
+    ports:
+      - "8888:9000"
+    volumes:
+      - .:/app
+
+  nginx:
+    image: new_visual_nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - new_visual
