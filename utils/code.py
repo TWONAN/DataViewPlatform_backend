@@ -9,8 +9,9 @@ class GeneralCode(object):
     COMMENT_NOT_NULL = 10004  # *-* 评论不能为空 -*-
     FAIL = 1001  # *-* 失败 -*-
     SUCCESS = 1000  # *-* 成功 -*-
-    USERNAME_OR_PASSWORD_ERROR = 1002  # *-* 用户名或密码错误 -*-
-    VERIFICATION_ERROR = 1003  # *-* 验证码错误 -*-
+    USERNAME_ERROR = 1002  # *-* 用户名不存在 -*-
+    PASSWORD_ERRPR = 1003  # *-* 密码错误 -*-
+    VERIFICATION_ERROR = 1004  # *-* 验证码错误 -*-
 
 
 class ResMsg(object):

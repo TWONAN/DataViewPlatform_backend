@@ -122,15 +122,21 @@ class LoginAPI(APIView):
         else:
             result = gt.failback_validate(challenge, validate, seccode)
         user = models.UserInfo.objects.filter(username=username, pwd=pwd).first()
+        name_obj = models.UserInfo.objects.filter(username=username).first()
         if result:
+            # 用户存在
             if user:
                 uid = str(uuid4())
                 models.UserInfo.objects.update_or_create(username=username, pwd=pwd, defaults={'token': uid})
                 # ret['token'] = uid
                 self.res.add_field("token", uid)
+            # 不存在用户
+            elif not name_obj:
+                self.res.update(code=GeneralCode.USERNAME_ERROR)
+            # 密码错误
             else:
-                # 用户名或密码错误
-                self.res.update(code=GeneralCode.USERNAME_OR_PASSWORD_ERROR)
+                # 密码错误
+                self.res.update(code=GeneralCode.PASSWORD_ERRPR)
         else:
             # 验证码错误
             self.res.update(code=GeneralCode.VERIFICATION_ERROR)
@@ -489,15 +495,33 @@ class CommentAPI(APIView):
         ret = list(models.Comment.objects. \
                    filter(article_id=article_id). \
                    values('pk', 'content', 'parent_comment_id', 'create_time', 'user'))
+        comment_list = list()
         try:
             for item in ret:
-                date = item['create_time']  # *-* datetime类型 -*-
-                user_id = item["user"]  # *-* userid -*-
+                date = item.get("create_time")  # *-* datetime类型 -*-
+                create_time = datetime.strftime(date, '%Y-%m-%d %H:%M:%S')  # *-* 格式化日期 -*-
+                content = item.get("content")
+                parent_comment_id = item.get("parent_comment_id")
+                user_id = item.get("user")  # *-* userid -*-
                 user = models.UserInfo.objects.get(uid=user_id)
-                item["username"] = user.username  # *-* 获取评论人名 -*-
-                item['create_time'] = datetime.strftime(date, '%Y-%m-%d %H:%M:%S')  # *-* 格式化日期 -*-
+                username = user.username  # *-* 获取评论人名 -*-
+
+                p_comment = ""
+                p_username = ""
                 # *-* 判断是否有父评论 -*-
-            self.res.update(data=ret)
+                if parent_comment_id:
+                    parent_obj = models.Comment.objects.filter(cid=parent_comment_id).first()
+                    p_comment = parent_obj.content
+                    p_username = parent_obj.user.username
+                comment_list.append({
+                    "username": username,
+                    "content": content,
+                    "parent_comment_id": parent_comment_id,
+                    "p_comment": p_comment,
+                    "p_username": p_username,
+                    "create_time": create_time
+                })
+            self.res.update(data=comment_list)
             return JsonResponse(self.res.data, safe=False)
         except Exception as e:
             print(e)
@@ -516,6 +540,7 @@ class CommentAPI(APIView):
         pid = request.POST.get('pid')  # *-* 父评论 -*-
         article_id = request.POST.get('article_id')  # *-* 文章id -*-
         content = request.POST.get('comment')  # *-* 文章内容 -*-
+        content = content.strip()
         if not content:
             self.res.update(code=GeneralCode.COMMENT_NOT_NULL)
             return JsonResponse(self.res.data)

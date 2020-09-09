@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>登录页面</title>
+    <meta name="description" content="particles.js is a lightweight JavaScript library for creating particles.">
+    <meta name="author" content="Vincent Garreau"/>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="../static/bootstrap/css/bootstrap.min.css">
+    <script src="../static/jquery-3.3.1.js"></script>
+    <script src="../static/bootstrap/js/bootstrap.min.js"></script>
+    <script src="../static/particles.js-master/particles.min.js"></script>
+    <style>
+        .carousel .item {
+            height: 600px;
+            background-color: #777;
+        }
+
+        .carousel-inner > .item > img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            height: 600px;
+        }
+    </style>
+</head>
+<body>
+<button id="bbb">按钮</button>
+<script>
+    $('#bbb').bind('keydown', function(event){
+    if(event.keyCode == "13"){
+        // do something...
+        console.log("bbbbb")
+    }
+});
+</script>
+</body>
+</html>

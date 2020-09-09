@@ -5,3 +5,8 @@ import copy
 a = b'{"name":"li","age":18}'
 b = json.loads(a)
 # print(b, type(b))
+
+
+a = " sad "
+b = a.strip()
+print(b)
