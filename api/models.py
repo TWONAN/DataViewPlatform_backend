@@ -123,3 +123,34 @@ class Comment(models.Model):
     class Meta:
         verbose_name = "评论"
         verbose_name_plural = verbose_name
+
+
+class OurPoem(models.Model):
+    """
+    诗歌用户表
+    """
+    p_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(to="UserInfo", to_field="uid")
+    title = models.CharField(max_length=255)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = "诗歌表"
+
+
+class OurPoemDetail(models.Model):
+    """
+    诗歌详情表
+    """
+    poem = models.OneToOneField(to="OurPoem", related_name="poem_detail")
+    content = models.TextField()
+
+    class Meta:
+        verbose_name = '诗歌详情'
+
+    def __str__(self):
+        return self.poem.title

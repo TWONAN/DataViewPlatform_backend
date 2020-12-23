@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from django.db import transaction
 from geetest import GeetestLib
 from datetime import datetime
+from django.http import QueryDict
 
 # Create your views here.
 
@@ -221,17 +222,13 @@ class DataHandleAPI(APIView):
         :param kwargs:
         :return:
         """
-        # ret = {'code': 1000, 'data': ''}
         username = request.GET.get('username')
         try:
             user = models.UserInfo.objects.get(username=username)
             dobj = models.DataDetail.objects.filter(user=user)
-            # dobj = models.DataDetail.objects.all()
             ser = DataDetailserializers(instance=dobj, many=True)
-            # ret['data'] = ser.data
             self.res.update(data=ser.data)
         except Exception as e:
-            # ret['code'] = 1001
             self.res.update(code=GeneralCode.FAIL)
         return Response(self.res.data)
 
@@ -243,15 +240,12 @@ class DataHandleAPI(APIView):
         :param kwargs:
         :return:
         """
-        # ret = {'code': 1000, 'data': ''}
         username = request.POST.get('username')
         itemName = request.POST.get('itemName')
         itemNum = request.POST.get('itemNum')
         itemExpNum = request.POST.get('itemExpNum')
         itemNewName = request.POST.get("itemNewName")
         if not itemName or not itemNum or not itemNewName:
-            # ret['code'] = 1002
-            # ret['data'] = '参数错误'
             self.res.update(code=GeneralCode.INVALID_PARAMS)
             return Response(self.res.data)
         # TODO:暂时不支持超过100的数字，显示会有误
@@ -272,16 +266,11 @@ class DataHandleAPI(APIView):
             if if_modify:
                 dobj = models.DataDetail.objects.filter(user=user)
                 ser = DataDetailserializers(instance=dobj, many=True)
-                # ret['data'] = ser.data
                 self.res.update(data=ser.data)
             else:
-                # ret['code'] = 1002
-                # ret['data'] = '参数错误'
                 self.res.update(code=GeneralCode.INVALID_PARAMS)
         except Exception as e:
             print(e)
-            # ret['code'] = 1002
-            # ret['data'] = '参数错误'
             self.res.update(code=GeneralCode.INVALID_PARAMS)
         return Response(self.res.data)
 
@@ -380,7 +369,8 @@ class ArticleAPI(APIView):
         :param aid:
         :return:
         """
-        aid = request.DELETE.get("aid")
+        data = QueryDict(request.body)
+        aid = data.get("aid")
         del_obj = models.Article.objects.filter(aid=aid)
         if del_obj:
             del_obj.update(status=0)
@@ -434,7 +424,6 @@ class PoetRating(APIView):
         :return:
         """
         # 根据作者的名字分组，得到每一个作者上榜的诗歌个数，倒序排序
-        # ret = {'code': 1000, 'data': ''}
         current_page = request.GET.get("page", 1)  # 获取当前的页数
         p_obj = HandlePage(current_page)
         poem_list = []
@@ -445,14 +434,10 @@ class PoetRating(APIView):
             button_list = p_obj.page_str(count)  # 获取到当前页面下生成的按钮
             for i in all_author[p_obj.start:p_obj.end]:
                 poem_list.append(i)
-            # ret['button'] = button_list
-            # ret['data'] = poem_list
             self.res.add_field("button", button_list)
             self.res.update(data=poem_list)
         except Exception as e:
             print(e)
-            # ret['code'] = 1002
-            # ret['error'] = '未获取'
             self.res.update(code=GeneralCode.FAIL)
         return Response(self.res.data)
 
@@ -572,6 +557,7 @@ class CommentAPI(APIView):
             self.res.update(code=GeneralCode.FAIL)
             return JsonResponse(self.res.data)
         return JsonResponse(self.res.data)
+
 
 
 ###############################################################
