@@ -70,6 +70,7 @@ class Article(models.Model):
     desc = models.CharField(max_length=255)  # 文章概述
     user = models.ForeignKey(to='UserInfo')  # 所属用户
     create_time = models.DateTimeField(auto_now_add=True)  # 创建的时间
+    status = models.IntegerField(default=1)  # 数据状态，1:存在，2:软删除
 
     def __str__(self):
         return self.title

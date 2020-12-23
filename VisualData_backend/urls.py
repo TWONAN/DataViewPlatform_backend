@@ -17,10 +17,13 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from api import urls as au
 from django.contrib.staticfiles import views
+from django.conf.urls import static
+from django.conf import settings
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/', include(au)),
-    url(r'^static/(?P<path>.*)$', views.serve)  # 服务器部署时需要用到才能通过url访问静态资源
+    url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}, name='static')
+    # 服务器部署时需要用到才能通过url访问静态资源
 
 ]

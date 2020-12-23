@@ -45,7 +45,7 @@ class Articleserializers(serializers.ModelSerializer):
 
     class Meta:
         model = models.Article
-        fields = ['username', 'aid', 'title', 'desc', 'create_time', 'content', 'avatar']
+        fields = ['username', 'aid', 'title', 'desc', 'create_time', 'content', 'avatar', "status"]
 
 
 # 处理分页
@@ -302,7 +302,7 @@ class ArticleAPI(APIView):
         :return:
         """
         # ret = {'code': 1000, 'data': ''}
-        aobj = models.Article.objects.all()
+        aobj = models.Article.objects.all().filter(status=1).order_by("create_time")
         ser = Articleserializers(instance=aobj, many=True)
         # ret['data'] = ser.data
         self.res.update(data=ser.data)
@@ -322,20 +322,21 @@ class ArticleAPI(APIView):
         img_obj = request.FILES.get('imgFile')  # *-* 上传的图片 -*-
         username = request.POST.get("username")  # *-* 用户名 -*-
         usertoken = request.POST.get("usertoken")  # *-* 用户token -*-
-        # ret = {"code": 200, "message": "success"}
+        is_delete = request.POST.get("delete")  #是否删除
+        aid = request.POST.get("aid")
+        if is_delete:
+            del_obj = models.Article.objects.filter(aid=aid)
+            if del_obj:
+                del_obj.update(status=0)
+            return Response(self.res.data)
         user = models.UserInfo.objects.filter(username=username, token=usertoken)
         # *-* 验证用户 -*-
         if not user:
-            # code = GeneralCode.AUTHORITY_FAIL
-            # ret["code"] = code
-            # ret["message"] = GeneralMsg(code).msg()
+
             self.res.update(code=GeneralCode.AUTHORITY_FAIL)
             return Response(self.res.data)
         # *-* 验证参数 -*-
         if not title or not content:
-            # code = GeneralCode.INVALID_PARAMS
-            # ret["code"] = code
-            # ret["message"] = GeneralMsg(code).msg()
             self.res.update(code=GeneralCode.INVALID_PARAMS)
             return Response(self.res.data)
         user = user.first()  # *-* 获取到用户对象 -*-
@@ -370,6 +371,19 @@ class ArticleAPI(APIView):
                 # ret["message"] = GeneralMsg(code).msg()
                 self.res.update(code=GeneralCode.FAIL)
                 return Response(self.res.data)
+        return Response(self.res.data)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        删除文章接口，不过是软删除哦~
+        :param request:
+        :param aid:
+        :return:
+        """
+        aid = request.DELETE.get("aid")
+        del_obj = models.Article.objects.filter(aid=aid)
+        if del_obj:
+            del_obj.update(status=0)
         return Response(self.res.data)
 
 
