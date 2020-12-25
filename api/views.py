@@ -49,6 +49,16 @@ class Articleserializers(serializers.ModelSerializer):
         fields = ['username', 'aid', 'title', 'desc', 'create_time', 'content', 'avatar', "status"]
 
 
+# 我们的诗歌序列化
+class OurPoemSerializers(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username')
+    content = serializers.CharField(source='poem_detail.content')
+
+    class Meta:
+        model = models.OurPoem
+        fields = ['username', 'p_id', 'update_time', 'title', 'content']
+
+
 # 处理分页
 class HandlePage(object):
     def __init__(self, current_page):
@@ -86,10 +96,7 @@ class HandlePage(object):
                 start_page = self.current_page - 4
                 end_page = self.current_page + 5
         for i in range(start_page, end_page):
-            # tmp = '<a href="http://127.0.0.1:8000/api/poetrating/?page=%d">%d</a>' % (i, i)
-            # if i == self.current_page:
-            #     tmp = '<a style="color:red;font-size:26px;padding: 5px" \
-            #     href="http://127.0.0.1:8000/api/poetrating/?page=%d">%d</a>' % (i, i)
+
             if i == self.current_page:
                 button_list.append({"page": i, "tips": True})
             else:
@@ -104,7 +111,6 @@ class LoginAPI(APIView):
         self.res = ResMsg()
 
     def post(self, request, *args, **kwargs):
-        # ret = {'status': 1000, }
         username = request.POST.get('username')
         pwd = request.POST.get('password')
 
@@ -113,8 +119,6 @@ class LoginAPI(APIView):
         challenge = request.POST.get(gt.FN_CHALLENGE, '')
         validate = request.POST.get(gt.FN_VALIDATE, '')
         seccode = request.POST.get(gt.FN_SECCODE, '')
-        # status = request.session.get(gt.GT_STATUS_SESSION_KEY)
-        # user_id = request.session.get('user_id')
         sobj = models.Session.objects.all().first()
         status = sobj.STATUS_SESSION_KEY
         user_id = sobj.USERID
@@ -129,7 +133,6 @@ class LoginAPI(APIView):
             if user:
                 uid = str(uuid4())
                 models.UserInfo.objects.update_or_create(username=username, pwd=pwd, defaults={'token': uid})
-                # ret['token'] = uid
                 self.res.add_field("token", uid)
             # 不存在用户
             elif not name_obj:
@@ -156,7 +159,6 @@ def reg(request):
     res = ResMsg()
     form_obj = reg_form.Regform()
     if request.method == 'POST':
-        # ret = {"status": 0, "msg": ""}
         form_obj = reg_form.Regform(request.POST)
         if form_obj.is_valid():
             form_obj.cleaned_data.pop('re_pwd')
@@ -167,7 +169,6 @@ def reg(request):
                 for i in range(6):
                     tmp_user.append(models.DataDetail(num=1, title="未知%s" % i, user=user, exp_num=1))
                 models.DataDetail.objects.bulk_create(tmp_user)
-                # ret["msg"] = "/login/"
                 res.update(msg="/login/")
                 return JsonResponse(res.data)
             else:
@@ -175,12 +176,9 @@ def reg(request):
                 for i in range(6):
                     tmp_user.append(models.DataDetail(num=1, title="未知%s" % i, user=user, exp_num=1))
                 models.DataDetail.objects.bulk_create(tmp_user)
-                # ret["msg"] = "/login/"
                 res.update(msg="/login/")
                 return JsonResponse(res.data)
         else:
-            # ret['status'] = 1
-            # ret['msg'] = form_obj.errors
             res.update(code=GeneralCode.FAIL, msg=form_obj.errors)
             return JsonResponse(res.data)
     return render(request, 'reg.html', {'form_obj': form_obj})
@@ -290,10 +288,8 @@ class ArticleAPI(APIView):
         :param kwargs:
         :return:
         """
-        # ret = {'code': 1000, 'data': ''}
         aobj = models.Article.objects.all().filter(status=1).order_by("create_time")
         ser = Articleserializers(instance=aobj, many=True)
-        # ret['data'] = ser.data
         self.res.update(data=ser.data)
         return Response(self.res.data)
 
@@ -311,17 +307,10 @@ class ArticleAPI(APIView):
         img_obj = request.FILES.get('imgFile')  # *-* 上传的图片 -*-
         username = request.POST.get("username")  # *-* 用户名 -*-
         usertoken = request.POST.get("usertoken")  # *-* 用户token -*-
-        is_delete = request.POST.get("delete")  #是否删除
-        aid = request.POST.get("aid")
-        if is_delete:
-            del_obj = models.Article.objects.filter(aid=aid)
-            if del_obj:
-                del_obj.update(status=0)
-            return Response(self.res.data)
+
         user = models.UserInfo.objects.filter(username=username, token=usertoken)
         # *-* 验证用户 -*-
         if not user:
-
             self.res.update(code=GeneralCode.AUTHORITY_FAIL)
             return Response(self.res.data)
         # *-* 验证参数 -*-
@@ -335,10 +324,6 @@ class ArticleAPI(APIView):
             with open(path, 'wb') as f:
                 for line in img_obj:
                     f.write(line)
-            # ret = {
-            #     'error': 0,
-            #     'url': '/static/img/' + img_obj.name,
-            # }
             self.res.add_field("errors", 0)
             self.res.add_field("url", "/static/img/" + img_obj.name)
             return JsonResponse(self.res.data)
@@ -355,9 +340,6 @@ class ArticleAPI(APIView):
                     models.ArticleDetail.objects.create(content=str(bp), article=article_obj)
             except Exception as e:
                 print(e)
-                # code = GeneralCode.FAIL
-                # ret["code"] = code
-                # ret["message"] = GeneralMsg(code).msg()
                 self.res.update(code=GeneralCode.FAIL)
                 return Response(self.res.data)
         return Response(self.res.data)
@@ -558,6 +540,89 @@ class CommentAPI(APIView):
             return JsonResponse(self.res.data)
         return JsonResponse(self.res.data)
 
+
+# 处理我们诗歌
+class OurPoemAPI(APIView):
+    def __init__(self):
+        super(OurPoemAPI).__init__()
+        self.res = ResMsg()
+
+    def get(self, request, *args, **kwargs):
+        """
+        获取所有诗歌
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        p_obj = models.OurPoem.objects.all().filter(status=1).order_by("update_time")
+        ser = OurPoemSerializers(instance=p_obj, many=True)
+        for item in ser.data:
+            item["update_time"] = datetime.strptime(item["update_time"], "%Y-%m-%dT%H:%M:%S.%f").strftime(
+                "%Y-%m-%d %H:%M:%S")
+        self.res.update(data=ser.data)
+        return Response(self.res.data)
+
+    def post(self, request, *args, **kwargs):
+        """
+        上传诗歌
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        title = request.POST.get('title')  # *-* 诗歌标题 -*-
+        content = request.POST.get('content')  # *-* 诗歌内容 -*-
+        username = request.POST.get("username")  # *-* 用户名 -*-
+        usertoken = request.POST.get("usertoken")  # *-* 用户token -*-
+
+        user = models.UserInfo.objects.filter(username=username, token=usertoken)
+        # *-* 验证用户 -*-
+        if not user:
+            self.res.update(code=GeneralCode.AUTHORITY_FAIL)
+            return Response(self.res.data)
+        # *-* 验证参数 -*-
+        if not title or not content:
+            self.res.update(code=GeneralCode.INVALID_PARAMS)
+            return Response(self.res.data)
+        user = user.first()  # *-* 获取到用户对象 -*-
+
+        # *-* 如果用户添加的有诗歌内容 -*-
+        if content:
+            bp = BeautifulSoup(content, 'lxml')
+            for tag in bp.find_all():
+                if tag.name in ['script', 'link']:
+                    tag.decompose()
+            try:
+                with transaction.atomic():  # *-* 事务回滚 -*-
+                    p_obj = models.OurPoem.objects.create(user=user, title=title)
+                    models.OurPoemDetail.objects.create(content=str(bp), poem=p_obj)
+            except Exception as e:
+                print(e)
+                self.res.update(code=GeneralCode.FAIL)
+                return Response(self.res.data)
+        return Response(self.res.data)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        删除，软删除
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        data = QueryDict(request.body)
+        pid = data.get("pid")
+        p_obj = models.OurPoem.objects.filter(p_id=pid)
+        if p_obj:
+            try:
+                with transaction.atomic():  # *-* 事务回滚 -*-
+                    p_obj.update(status=0)
+            except Exception as e:
+                print(e)
+                self.res.update(code=GeneralCode.FAIL)
+                return Response(self.res.data)
+            return Response(self.res.data)
 
 
 ###############################################################

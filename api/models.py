@@ -134,6 +134,7 @@ class OurPoem(models.Model):
     title = models.CharField(max_length=255)
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
+    status = models.IntegerField(default=1)
 
     def __str__(self):
         return self.title

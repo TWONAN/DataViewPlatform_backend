@@ -9,7 +9,7 @@ urlpatterns = [
     url(r'^pc-geetest/register', views.get_geetest),
     url(r'^article/$', views.ArticleAPI.as_view()),
     url(r'^poetrating/$', views.PoetRating.as_view()),
-
     url(r'^comments', views.CommentAPI.as_view()),
-    url(r'^test/$', views.test)
+    url(r'^test/$', views.test),
+    url(r'^our_poem/$', views.OurPoemAPI.as_view())
 ]
