@@ -288,9 +288,14 @@ class ArticleAPI(APIView):
         :param kwargs:
         :return:
         """
+        page = int(request.GET.get("page"))
+        size = 5  # 默认5条每页
         aobj = models.Article.objects.all().filter(status=1).order_by("create_time")
+        count = aobj.count()
+        aobj = aobj[(page - 1) * size:page * size]
         ser = Articleserializers(instance=aobj, many=True)
         self.res.update(data=ser.data)
+        self.res.add_field("total_page", count)
         return Response(self.res.data)
 
     def post(self, request, *args, **kwargs):
