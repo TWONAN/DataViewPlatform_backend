@@ -4,7 +4,7 @@ from api import views
 urlpatterns = [
     url(r'^login/$', views.LoginAPI.as_view()),
     url(r'^reg/$', views.reg),
-    url(r'^case_detail/$', views.CaseDetail.as_view()),
+    url(r'^wanna_to_do/$', views.OurWannaTodo.as_view()),
     url(r'^data_detail/$', views.DataHandleAPI.as_view()),
     url(r'^pc-geetest/register', views.get_geetest),
     url(r'^article/$', views.ArticleAPI.as_view()),

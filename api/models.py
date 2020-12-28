@@ -155,3 +155,22 @@ class OurPoemDetail(models.Model):
 
     def __str__(self):
         return self.poem.title
+
+
+class OurWannaToDo(models.Model):
+    """
+    我们想做的事
+    """
+    w_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(to="UserInfo", to_field="uid")
+    content = models.TextField()
+    weather = models.IntegerField()
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+    status = models.IntegerField()
+
+    class Meta:
+        verbose_name = '我们想做的事情'
+
+    def __str__(self):
+        return self.w_id

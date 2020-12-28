@@ -24,10 +24,10 @@ pc_geetest_id = 'b46d1900d0a894591916ea94ea91bd2c'
 pc_geetest_key = '36fc3fe98530eea08dfc6ce76e3d24c4'
 
 
-# 案例详情数据序列化
-class CaseDetailserializers(serializers.ModelSerializer):
+# 我们想做的事序列化
+class OurWannaToDoserializers(serializers.ModelSerializer):
     class Meta:
-        model = models.CaseDetail
+        model = models.OurWannaToDo
         fields = '__all__'
 
 
@@ -184,11 +184,11 @@ def reg(request):
     return render(request, 'reg.html', {'form_obj': form_obj})
 
 
-# 案例详情视图
-class CaseDetail(APIView):
+# 我们想一起做的事的视图
+class OurWannaTodo(APIView):
 
     def __init__(self):
-        super(CaseDetail).__init__()
+        super(OurWannaTodo).__init__()
         self.res = ResMsg()
 
     def get(self, request, *args, **kwargs):
@@ -199,10 +199,78 @@ class CaseDetail(APIView):
         :param kwargs:
         :return:
         """
-        caseobj = models.CaseDetail.objects.all()
-        ser = CaseDetailserializers(instance=caseobj, many=True)
-        self.res.update(data=ser.data)
+        boy = models.UserInfo.objects.get(uid=3)
+        girl = models.UserInfo.objects.get(uid=2)
+        boy_obj = models.OurWannaToDo.objects.filter(user=boy).order_by("create_time")
+        boy_count = boy_obj.count()
+        girl_obj = models.OurWannaToDo.objects.filter(user=girl).order_by("create_time")
+        girl_count = girl_obj.count()
+
+        if boy_obj:
+            boy_ser = OurWannaToDoserializers(instance=boy_obj.all(), many=True)
+            self.res.add_field("right", boy_ser.data)
+            self.res.add_field("total_right", boy_count)
+        else:
+            self.res.add_field("right", [])
+            self.res.add_field("total_right", 0)
+
+        if girl_obj:
+            girl_ser = OurWannaToDoserializers(instance=girl_obj.all(), many=True)
+            self.res.add_field("left", girl_ser.data)
+            self.res.add_field("total_left", girl_count)
+        else:
+            self.res.add_field("left", [])
+            self.res.add_field("total_left", 0)
+
         return Response(self.res.data)
+
+    def post(self, request, *args, **kwargs):
+        """
+        上传想做的事情
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        content = request.POST.get('content')  # *-* 内容 -*-
+        weather = request.POST.get('weather')  # *-* 天气 -*-
+        status = request.POST.get('status')  # *-* 状态 -*-
+        username = request.POST.get("username")  # *-* 用户名 -*-
+        usertoken = request.POST.get("usertoken")  # *-* 用户token -*-
+
+        user = models.UserInfo.objects.filter(username=username, token=usertoken)
+        # *-* 验证用户 -*-
+        if not user:
+            self.res.update(code=GeneralCode.AUTHORITY_FAIL)
+            return Response(self.res.data)
+        # *-* 验证参数 -*-
+        if not content:
+            self.res.update(code=GeneralCode.INVALID_PARAMS)
+            return Response(self.res.data)
+        user = user.first()  # *-* 获取到用户对象 -*-
+
+        try:
+            with transaction.atomic():
+                models.OurWannaToDo.objects.create(user=user, content=content, weather=weather, status=status)
+        except Exception as e:
+            print(e)
+            self.res.update(code=GeneralCode.FAIL)
+            return Response(self.res.data)
+        return Response(self.res.data)
+
+    def delete(self, request, *args, **kwargs):
+        data = QueryDict(request.body)
+        w_id = data.get("w_id")
+        w_obj = models.OurWannaToDo.objects.filter(w_id=w_id)
+        if w_obj:
+            try:
+                with transaction.atomic():  # *-* 事务回滚 -*-
+                    w_obj.update(status=0)
+            except Exception as e:
+                print(e)
+                self.res.update(code=GeneralCode.FAIL)
+                return Response(self.res.data)
+            return Response(self.res.data)
 
 
 # 数据处理视图：
@@ -273,7 +341,7 @@ class DataHandleAPI(APIView):
         return Response(self.res.data)
 
 
-# 显示用户源码文章
+# 处理我们的文章
 class ArticleAPI(APIView):
 
     def __init__(self):
@@ -290,7 +358,7 @@ class ArticleAPI(APIView):
         """
         page = int(request.GET.get("page"))
         size = 5  # 默认5条每页
-        aobj = models.Article.objects.all().filter(status=1).order_by("create_time")
+        aobj = models.Article.objects.all().filter(status=1).order_by("-create_time")
         count = aobj.count()
         aobj = aobj[(page - 1) * size:page * size]
         ser = Articleserializers(instance=aobj, many=True)
@@ -560,12 +628,17 @@ class OurPoemAPI(APIView):
         :param kwargs:
         :return:
         """
-        p_obj = models.OurPoem.objects.all().filter(status=1).order_by("update_time")
+        page = int(request.GET.get("page"))
+        size = 5  # 默认5条一页
+        p_obj = models.OurPoem.objects.all().filter(status=1).order_by("-update_time")
+        count = p_obj.count()
+        p_obj = p_obj[(page - 1) * size:page * size]
         ser = OurPoemSerializers(instance=p_obj, many=True)
         for item in ser.data:
             item["update_time"] = datetime.strptime(item["update_time"], "%Y-%m-%dT%H:%M:%S.%f").strftime(
                 "%Y-%m-%d %H:%M:%S")
         self.res.update(data=ser.data)
+        self.res.add_field("total_page", count)
         return Response(self.res.data)
 
     def post(self, request, *args, **kwargs):
