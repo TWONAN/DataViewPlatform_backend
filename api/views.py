@@ -199,23 +199,55 @@ class OurWannaTodo(APIView):
         :param kwargs:
         :return:
         """
-        boy = models.UserInfo.objects.get(uid=3)
-        girl = models.UserInfo.objects.get(uid=2)
-        boy_obj = models.OurWannaToDo.objects.filter(user=boy).order_by("create_time")
-        boy_count = boy_obj.count()
-        girl_obj = models.OurWannaToDo.objects.filter(user=girl).order_by("create_time")
-        girl_count = girl_obj.count()
+        boy = models.UserInfo.objects.filter(uid=3)
+        girl = models.UserInfo.objects.filter(uid=2)
 
-        if boy_obj:
-            boy_ser = OurWannaToDoserializers(instance=boy_obj.all(), many=True)
+        if boy and request.GET.get("page_right"):
+            page_right = int(request.GET.get("page_right"))
+            page_right_size = 5
+            boy_obj = models.OurWannaToDo.objects.filter(user=boy.first()).order_by("create_time")
+            boy_count = boy_obj.count()
+            boy_ser = OurWannaToDoserializers(
+                instance=boy_obj.all()[(page_right - 1) * page_right_size:page_right * page_right_size], many=True)
+            for item in boy_ser.data:
+                item["create_time"] = datetime.strptime(item["create_time"], "%Y-%m-%dT%H:%M:%S.%f").strftime(
+                    "%Y-%m-%d %H:%M:%S")
+                if item.get("weather") == 0:
+                    weather = "晴天"
+                elif item.get("weather") == 1:
+                    weather = "多云"
+                elif item.get("weather") == 2:
+                    weather = "雨天"
+                elif item.get("weather") == 2:
+                    weather = "大风"
+                elif item.get("weather") == 2:
+                    weather = "雾天"
+                else:
+                    weather = "雪天"
+                item["weather"] = weather
+
+                if item.get("status") == 0:
+                    status = "未完成"
+                else:
+                    status = "完成"
+                item["status"] = status
+
             self.res.add_field("right", boy_ser.data)
             self.res.add_field("total_right", boy_count)
         else:
             self.res.add_field("right", [])
             self.res.add_field("total_right", 0)
 
-        if girl_obj:
-            girl_ser = OurWannaToDoserializers(instance=girl_obj.all(), many=True)
+        if girl and request.GET.get("page_left"):
+            page_left = int(request.GET.get("page_left"))
+            page_left_size = 5
+            girl_obj = models.OurWannaToDo.objects.filter(user=girl.first()).order_by("create_time")
+            girl_count = girl_obj.count()
+            girl_ser = OurWannaToDoserializers(
+                instance=girl_obj.all()[(page_left - 1) * page_left_size:page_left * page_left_size], many=True)
+            for item in girl_ser.data:
+                item["create_time"] = datetime.strptime(item["create_time"], "%Y-%m-%dT%H:%M:%S.%f").strftime(
+                    "%Y-%m-%d %H:%M:%S")
             self.res.add_field("left", girl_ser.data)
             self.res.add_field("total_left", girl_count)
         else:
@@ -233,8 +265,8 @@ class OurWannaTodo(APIView):
         :return:
         """
         content = request.POST.get('content')  # *-* 内容 -*-
-        weather = request.POST.get('weather')  # *-* 天气 -*-
-        status = request.POST.get('status')  # *-* 状态 -*-
+        weather = int(request.POST.get('weather'))  # *-* 天气 -*-
+        status = int(request.POST.get('status'))  # *-* 状态 -*-
         username = request.POST.get("username")  # *-* 用户名 -*-
         usertoken = request.POST.get("usertoken")  # *-* 用户token -*-
 

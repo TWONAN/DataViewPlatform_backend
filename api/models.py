@@ -164,9 +164,8 @@ class OurWannaToDo(models.Model):
     w_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(to="UserInfo", to_field="uid")
     content = models.TextField()
-    weather = models.IntegerField()
+    weather = models.IntegerField()  # 0:晴天,1:多云,2:雨天,3:大风,4:雾天,5:雪天
     create_time = models.DateTimeField(auto_now_add=True)
-    update_time = models.DateTimeField(auto_now=True)
     status = models.IntegerField()
 
     class Meta:
