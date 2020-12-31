@@ -218,9 +218,9 @@ class OurWannaTodo(APIView):
                     weather = "多云"
                 elif item.get("weather") == 2:
                     weather = "雨天"
-                elif item.get("weather") == 2:
+                elif item.get("weather") == 3:
                     weather = "大风"
-                elif item.get("weather") == 2:
+                elif item.get("weather") == 4:
                     weather = "雾天"
                 else:
                     weather = "雪天"
@@ -248,6 +248,25 @@ class OurWannaTodo(APIView):
             for item in girl_ser.data:
                 item["create_time"] = datetime.strptime(item["create_time"], "%Y-%m-%dT%H:%M:%S.%f").strftime(
                     "%Y-%m-%d %H:%M:%S")
+                if item.get("weather") == 0:
+                    weather = "晴天"
+                elif item.get("weather") == 1:
+                    weather = "多云"
+                elif item.get("weather") == 2:
+                    weather = "雨天"
+                elif item.get("weather") == 3:
+                    weather = "大风"
+                elif item.get("weather") == 4:
+                    weather = "雾天"
+                else:
+                    weather = "雪天"
+                item["weather"] = weather
+
+                if item.get("status") == 0:
+                    status = "未完成"
+                else:
+                    status = "完成"
+                item["status"] = status
             self.res.add_field("left", girl_ser.data)
             self.res.add_field("total_left", girl_count)
         else:
@@ -265,25 +284,40 @@ class OurWannaTodo(APIView):
         :return:
         """
         content = request.POST.get('content')  # *-* 内容 -*-
-        weather = int(request.POST.get('weather'))  # *-* 天气 -*-
-        status = int(request.POST.get('status'))  # *-* 状态 -*-
+        weather = int(request.POST.get('weather')) if request.POST.get('weather') else 0  # *-* 天气 -*-
+        status = int(request.POST.get('status')) if request.POST.get('status') else 0  # *-* 状态 -*-
         username = request.POST.get("username")  # *-* 用户名 -*-
         usertoken = request.POST.get("usertoken")  # *-* 用户token -*-
+        change_status = request.POST.get("changeStatus")  # *-* 修改完成度 -*-
+        wid = request.POST.get("wid")  # *-* 想做事id -*-
 
         user = models.UserInfo.objects.filter(username=username, token=usertoken)
         # *-* 验证用户 -*-
         if not user:
             self.res.update(code=GeneralCode.AUTHORITY_FAIL)
             return Response(self.res.data)
-        # *-* 验证参数 -*-
-        if not content:
-            self.res.update(code=GeneralCode.INVALID_PARAMS)
-            return Response(self.res.data)
+
         user = user.first()  # *-* 获取到用户对象 -*-
 
         try:
             with transaction.atomic():
-                models.OurWannaToDo.objects.create(user=user, content=content, weather=weather, status=status)
+                # 修改完成状态
+                if change_status and wid:
+                    models.OurWannaToDo.objects.filter(w_id=wid).update(status=int(change_status))
+                else:
+                    wanna_obj = models.OurWannaToDo.objects.filter(user=user).order_by("-create_time").first()
+                    if wanna_obj:
+                        models.OurWannaToDo.objects.create(user=user,
+                                                           content=content,
+                                                           weather=weather,
+                                                           status=status,
+                                                           serial_number=wanna_obj.serial_number + 1)
+                    else:
+                        models.OurWannaToDo.objects.create(user=user,
+                                                           content=content,
+                                                           weather=weather,
+                                                           status=status,
+                                                           serial_number=1)
         except Exception as e:
             print(e)
             self.res.update(code=GeneralCode.FAIL)
