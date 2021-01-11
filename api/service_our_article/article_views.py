@@ -2,6 +2,7 @@
 我们的文章视图函数
 """
 import os
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 from django.db import transaction
@@ -45,6 +46,9 @@ class ArticleAPI(APIView):
         count = aobj.count()
         aobj = aobj[(page - 1) * size:page * size]
         ser = Articleserializers(instance=aobj, many=True)
+        for item in ser.data:
+            item["create_time"] = datetime.strptime(item["create_time"], "%Y-%m-%dT%H:%M:%S.%f").strftime(
+                "%Y-%m-%d %H:%M:%S")
         self.res.update(data=ser.data)
         self.res.add_field("total_page", count)
         return Response(self.res.data)
