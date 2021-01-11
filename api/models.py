@@ -174,3 +174,13 @@ class OurWannaToDo(models.Model):
 
     def __str__(self):
         return self.w_id
+
+
+class DailyNotice(models.Model):
+    """
+    每日小提示
+    """
+    n_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(to="UserInfo", to_field="uid")
+    content = models.TextField()
+    update_time = models.DateTimeField(auto_now=True)

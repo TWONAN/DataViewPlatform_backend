@@ -9,6 +9,7 @@ from api.service_our_article.comments_views import CommentAPI
 from api.service_our_poem.our_poem_views import OurPoemAPI
 from api.service_poet_rating.rating_views import PoetRating
 from api.service_wanna_to_do.wanna_views import OurWannaTodo
+from api.service_daily_notice.notice_views import NoticeDaily
 
 urlpatterns = [
     url(r'^login/$', LoginAPI.as_view()),  # 登录视图
@@ -20,5 +21,7 @@ urlpatterns = [
     url(r'^data_detail/$', DataHandleAPI.as_view()),  # 数据处理视图
     url(r'^comments', CommentAPI.as_view()),  # 处理评论相关视图
     url(r'^poetrating/$', PoetRating.as_view()),  # 诗歌排行视图
+    url(r'^daily_notice/$', NoticeDaily.as_view()),  # 每日提示视图
+
     url(r'^test/$', views.test),
 ]
