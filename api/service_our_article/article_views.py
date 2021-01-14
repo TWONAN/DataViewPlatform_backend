@@ -41,8 +41,14 @@ class ArticleAPI(APIView):
         :return:
         """
         page = int(request.GET.get("page"))
+        username = request.GET.get("username")
+        usertoken = request.GET.get("usertoken")
         size = 5  # 默认5条每页
-        aobj = models.Article.objects.all().filter(status=1).order_by("-create_time")
+        if username and usertoken:
+            user = models.UserInfo.objects.filter(username=username, token=usertoken)
+            aobj = models.Article.objects.all().filter(status=1, user=user).order_by("-create_time")
+        else:
+            aobj = models.Article.objects.all().filter(status=1).order_by("-create_time")
         count = aobj.count()
         aobj = aobj[(page - 1) * size:page * size]
         ser = Articleserializers(instance=aobj, many=True)
