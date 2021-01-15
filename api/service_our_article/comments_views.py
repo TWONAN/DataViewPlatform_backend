@@ -4,7 +4,8 @@
 from datetime import datetime
 
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse, QueryDict
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api import models
@@ -27,7 +28,7 @@ class CommentAPI(APIView):
         """
         article_id = request.GET.get("article_id")
         ret = list(models.Comment.objects. \
-                   filter(article_id=article_id). \
+                   filter(article_id=article_id, status=1). \
                    values('pk', 'content', 'parent_comment_id', 'create_time', 'user'))
         comment_list = list()
         try:
@@ -92,3 +93,55 @@ class CommentAPI(APIView):
             self.res.update(code=GeneralCode.FAIL)
             return JsonResponse(self.res.data)
         return JsonResponse(self.res.data)
+
+
+class MyCommentAPI(APIView):
+    def __init__(self, *args, **kwargs):
+        super(MyCommentAPI).__init__(*args, **kwargs)
+        self.res = ResMsg()
+
+    def get(self, request, *args, **kwargs):
+        """
+        查看自己评论
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        page = int(request.GET.get("page"))
+        size = 5  # 默认5条每页
+        usertoken = request.GET.get("usertoken")
+        username = request.GET.get("username")
+        user = models.UserInfo.objects.filter(username=username, token=usertoken)
+        # *-* 验证用户 -*-
+        if not user:
+            self.res.update(code=GeneralCode.AUTHORITY_FAIL)
+            return Response(self.res.data)
+
+        query = models.Comment.objects.filter(user=user, status=1). \
+            values("article__title", 'pk', 'content',
+                   "article__articledetail__content",
+                   "article__aid",
+                   'parent_comment_id',
+                   'create_time', 'user'). \
+            order_by("-create_time")
+        count = query.count()
+        query = query[(page - 1) * size:page * size]
+        self.res.update(data=query)
+        self.res.add_field("total_page", count)
+        return Response(self.res.data)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        删除自己评论
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        data = QueryDict(request.body)
+        cid = data.get("cid")
+        del_obj = models.Comment.objects.filter(cid=cid)
+        if del_obj:
+            del_obj.update(status=0)
+        return Response(self.res.data)

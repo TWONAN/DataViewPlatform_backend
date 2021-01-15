@@ -114,6 +114,7 @@ class Comment(models.Model):
     user = models.ForeignKey(to="UserInfo", to_field="uid")
     content = models.CharField(max_length=255, null=False)  # 评论内容
     create_time = models.DateTimeField(auto_now_add=True)
+    status = models.IntegerField(default=1)  # 状态
 
     parent_comment = models.ForeignKey("self", null=True)
 
