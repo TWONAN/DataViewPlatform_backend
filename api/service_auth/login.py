@@ -41,9 +41,11 @@ class LoginAPI(APIView):
         if result:
             # 用户存在
             if user:
+                avatar = str(user.avatar)
                 uid = str(uuid4())
                 models.UserInfo.objects.update_or_create(username=username, pwd=pwd, defaults={'token': uid})
                 self.res.add_field("token", uid)
+                self.res.add_field("avatar", avatar)
             # 不存在用户
             elif not name_obj:
                 self.res.update(code=GeneralCode.USERNAME_ERROR)
