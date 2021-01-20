@@ -185,3 +185,19 @@ class DailyNotice(models.Model):
     user = models.ForeignKey(to="UserInfo", to_field="uid")
     content = models.TextField()
     update_time = models.DateTimeField(auto_now=True)
+
+
+class DailySign(models.Model):
+    """
+    每日签到
+    """
+    s_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(to="UserInfo", to_field="uid")
+    update_time = models.DateTimeField(auto_now_add=True)
+    sign_num = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = '每日签到'
+
+    def __str__(self):
+        return self.s_id

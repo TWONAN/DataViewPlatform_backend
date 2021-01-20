@@ -5,11 +5,12 @@ from api.service_auth.login import get_geetest
 from api.service_auth.reg import reg
 from api.service_data_handle.data_handle_views import DataHandleAPI
 from api.service_our_article.article_views import ArticleAPI
-from api.service_our_article.comments_views import CommentAPI, MyCommentAPI
+from api.service_our_article.comments_views import CommentAPI, MyCommentAPI, ReplyAPI
 from api.service_our_poem.our_poem_views import OurPoemAPI
 from api.service_poet_rating.rating_views import PoetRating
 from api.service_wanna_to_do.wanna_views import OurWannaTodo
 from api.service_daily_notice.notice_views import NoticeDaily
+from api.service_daily_sign.views import DailySign
 
 urlpatterns = [
     url(r'^login/$', LoginAPI.as_view()),  # 登录视图
@@ -22,6 +23,9 @@ urlpatterns = [
     url(r'^comments', CommentAPI.as_view()),  # 处理评论相关视图
     url(r'^poetrating/$', PoetRating.as_view()),  # 诗歌排行视图
     url(r'^daily_notice/$', NoticeDaily.as_view()),  # 每日提示视图
+    url(r'^daily_sign/$', DailySign.as_view()),  # 每日提示视图
     url(r'^my_comment/$', MyCommentAPI.as_view()),  # 我回复的
+    url(r'^reply/$', ReplyAPI.as_view()),  # 回复我的
+
     url(r'^test/$', views.test),
 ]

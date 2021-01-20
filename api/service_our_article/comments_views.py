@@ -4,6 +4,7 @@
 from datetime import datetime
 
 from django.db import transaction
+from django.db.models import Q
 from django.http import JsonResponse, QueryDict
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -150,9 +151,9 @@ class MyCommentAPI(APIView):
         return Response(self.res.data)
 
 
-class Reply(APIView):
+class ReplyAPI(APIView):
     def __init__(self, *args, **kwargs):
-        super(Reply).__init__(*args, **kwargs)
+        super(ReplyAPI).__init__(*args, **kwargs)
         self.res = ResMsg()
 
     def get(self, request, *args, **kwargs):
@@ -175,4 +176,7 @@ class Reply(APIView):
             return Response(self.res.data)
 
         # 查询他人评论
-        query = models.Comment.objects.filter()
+        article_list = models.Article.objects.filter(user=user).values("aid")
+        reply_query = models.Comment.objects.filter(article__in=article_list)
+        print(reply_query)
+
