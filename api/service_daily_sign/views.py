@@ -18,6 +18,28 @@ class DailySign(APIView):
         super(DailySign).__init__(*args, **kwargs)
         self.res = ResMsg()
 
+    def get(self, request, *args, **kwargs):
+        """
+        获取签到数
+        :param request:
+        :param args:
+        :param kwargs:
+        :return:
+        """
+        username = request.GET.get("username")
+        usertoken = request.GET.get("usertoken")
+
+        user = models.UserInfo.objects.get(username=username, token=usertoken)
+        # *-* 验证用户 -*-
+        if not user:
+            self.res.update(code=GeneralCode.AUTHORITY_FAIL)
+            return Response(self.res.data)
+
+        sobj = models.DailySign.objects.filter(user=user).first()
+        sign_num = sobj.sign_num
+        self.res.update(data={"sign_num": sign_num})
+        return Response(self.res.data)
+
     def post(self, request, *args, **kwargs):
         """
         通过时间判断当日是否签到
@@ -43,7 +65,14 @@ class DailySign(APIView):
             self.res.update(code=GeneralCode.FAIL)
             return Response(self.res.data)
         new_time = datetime.strptime(current_date, "%Y-%m-%d")
-        sobj.update_time = new_time
-        sobj.sign_num += 1
-        sobj.save()
+        try:
+            with transaction.atomic():  # *-* 事务回滚 -*-
+                sobj.update_time = new_time
+                sobj.sign_num += 1
+                sobj.save()
+        except Exception as e:
+            print(e)
+            self.res.update(code=GeneralCode.FAIL)
+            return Response(self.res.data)
+
         return Response(self.res.data)
