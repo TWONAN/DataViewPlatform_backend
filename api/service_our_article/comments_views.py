@@ -1,6 +1,7 @@
 """
 处理评论相关
 """
+import operator
 from datetime import datetime
 
 from django.db import transaction
@@ -34,6 +35,7 @@ class CommentAPI(APIView):
         comment_list = list()
         try:
             for item in ret:
+                pk = item.get("pk")  # 评论ID
                 date = item.get("create_time")  # *-* datetime类型 -*-
                 create_time = datetime.strftime(date, '%Y-%m-%d %H:%M:%S')  # *-* 格式化日期 -*-
                 content = item.get("content")
@@ -55,7 +57,9 @@ class CommentAPI(APIView):
                     "parent_comment_id": parent_comment_id,
                     "p_comment": p_comment,
                     "p_username": p_username,
-                    "create_time": create_time
+                    "create_time": create_time,
+                    "user_id": user_id,
+                    "pk": pk
                 })
             self.res.update(data=comment_list)
             return JsonResponse(self.res.data, safe=False)
@@ -176,7 +180,35 @@ class ReplyAPI(APIView):
             return Response(self.res.data)
 
         # 查询他人评论
+        all_reply_list = list()
         article_list = models.Article.objects.filter(user=user).values("aid")
-        reply_query = models.Comment.objects.filter(article__in=article_list)
-        print(reply_query)
-
+        reply_base_article = models.Comment.objects.filter(~Q(user=user), article__in=article_list). \
+            values("article__title", 'pk', 'content',
+                   "article__articledetail__content",
+                   "article__aid",
+                   'parent_comment_id',
+                   'create_time', 'user'). \
+            order_by("-create_time")
+        base_comments = models.Comment.objects.filter(user=user).values("cid")
+        reply_base_comment = models.Comment.objects.filter(parent_comment__cid__in=base_comments). \
+            values("article__title", 'pk', 'content',
+                   "article__articledetail__content",
+                   "article__aid",
+                   'parent_comment_id',
+                   'create_time', 'user'). \
+            order_by("-create_time")
+        for item in reply_base_article:
+            all_reply_list.append(item)
+        for item in reply_base_comment:
+            all_reply_list.append(item)
+        # ============根据回复时间倒序排序============
+        all_reply_list = sorted(all_reply_list, key=operator.itemgetter("create_time"), reverse=True)
+        # ============排序结束============
+        count = len(all_reply_list)
+        all_reply_list = all_reply_list[(page - 1) * size:page * size]
+        for item in all_reply_list:
+            create_time = item.get("create_time")
+            item["create_time"] = create_time.strftime("%Y-%m-%d %H:%M:%S")
+        self.res.update(data=all_reply_list)
+        self.res.add_field("total_page", count)
+        return Response(self.res.data)
