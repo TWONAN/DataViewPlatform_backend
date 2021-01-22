@@ -1,16 +1,17 @@
 """
 处理每日签到
 """
+import logging
 from datetime import datetime
-
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse, QueryDict
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from api import models
 from utils.code import ResMsg, GeneralCode
+
+logger = logging.getLogger("error")
 
 
 class DailySign(APIView):
@@ -71,7 +72,7 @@ class DailySign(APIView):
                 sobj.sign_num += 1
                 sobj.save()
         except Exception as e:
-            print(e)
+            logger.error(e)
             self.res.update(code=GeneralCode.FAIL)
             return Response(self.res.data)
 

@@ -2,14 +2,15 @@
 处理诗歌排行
 """
 import requests
+import logging
 from django.db.models import Count
 from lxml import html
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from api import models
 from utils.code import ResMsg, GeneralCode
 
+logger = logging.getLogger("error")
 
 # 处理分页
 class HandlePage(object):
@@ -103,7 +104,7 @@ class PoetRating(APIView):
             self.res.add_field("button", button_list)
             self.res.update(data=poem_list)
         except Exception as e:
-            print(e)
+            logger.error(e)
             self.res.update(code=GeneralCode.FAIL)
         return Response(self.res.data)
 

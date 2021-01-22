@@ -1,21 +1,20 @@
 """
 我们的诗歌视图函数
 """
+import logging
 from datetime import datetime
-
 from bs4 import BeautifulSoup
 from django.db import transaction
 from django.http import QueryDict
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from api import models
-
-# 我们的诗歌序列化
 from utils.code import ResMsg, GeneralCode
 
+logger = logging.getLogger("error")
 
+# 我们的诗歌序列化
 class OurPoemSerializers(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     content = serializers.CharField(source='poem_detail.content')
@@ -87,7 +86,7 @@ class OurPoemAPI(APIView):
                     p_obj = models.OurPoem.objects.create(user=user, title=title)
                     models.OurPoemDetail.objects.create(content=str(bp), poem=p_obj)
             except Exception as e:
-                print(e)
+                logger.error(e)
                 self.res.update(code=GeneralCode.FAIL)
                 return Response(self.res.data)
         return Response(self.res.data)
@@ -108,7 +107,7 @@ class OurPoemAPI(APIView):
                 with transaction.atomic():  # *-* 事务回滚 -*-
                     p_obj.update(status=0)
             except Exception as e:
-                print(e)
+                logger.error(e)
                 self.res.update(code=GeneralCode.FAIL)
                 return Response(self.res.data)
             return Response(self.res.data)

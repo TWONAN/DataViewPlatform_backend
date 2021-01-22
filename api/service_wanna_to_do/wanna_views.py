@@ -1,15 +1,17 @@
 """
 我们想一起做的事的视图
 """
+import logging
 from datetime import datetime
 from django.db import transaction
 from django.http import QueryDict
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from api import models
 from utils.code import ResMsg, GeneralCode
+
+logger = logging.getLogger("error")
 
 
 # 我们想做的事序列化
@@ -153,7 +155,7 @@ class OurWannaTodo(APIView):
                                                            status=status,
                                                            serial_number=1)
         except Exception as e:
-            print(e)
+            logger.error(e)
             self.res.update(code=GeneralCode.FAIL)
             return Response(self.res.data)
         return Response(self.res.data)
@@ -167,7 +169,7 @@ class OurWannaTodo(APIView):
                 with transaction.atomic():  # *-* 事务回滚 -*-
                     w_obj.update(status=0)
             except Exception as e:
-                print(e)
+                logger.error(e)
                 self.res.update(code=GeneralCode.FAIL)
                 return Response(self.res.data)
             return Response(self.res.data)

@@ -1,13 +1,15 @@
 """
 每日小提示
 """
+import logging
 from django.db import transaction
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from api import models
 from utils.code import ResMsg, GeneralCode
+
+logger = logging.getLogger("error")
 
 
 class NoticeDailyserializers(serializers.ModelSerializer):
@@ -45,7 +47,7 @@ class NoticeDaily(APIView):
                     models.DailyNotice.objects.create(user=user.first(), content=content)
 
             except Exception as e:
-                print(e)
+                logger.error(e)
                 self.res.update(code=GeneralCode.FAIL)
                 return Response(self.res.data)
         return Response(self.res.data)

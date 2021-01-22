@@ -2,17 +2,18 @@
 我们的文章视图函数
 """
 import os
+import logging
 from datetime import datetime
-
 from bs4 import BeautifulSoup
 from django.db import transaction
 from django.http import JsonResponse, QueryDict
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from api import models
 from utils.code import ResMsg, GeneralCode
+
+logger = logging.getLogger("error")
 
 
 # 文章序列化
@@ -105,7 +106,7 @@ class ArticleAPI(APIView):
                     article_obj = models.Article.objects.create(user=user, desc=desc, title=title)
                     models.ArticleDetail.objects.create(content=str(bp), article=article_obj)
             except Exception as e:
-                print(e)
+                logger.error(e)
                 self.res.update(code=GeneralCode.FAIL)
                 return Response(self.res.data)
         return Response(self.res.data)
@@ -121,5 +122,9 @@ class ArticleAPI(APIView):
         aid = data.get("aid")
         del_obj = models.Article.objects.filter(aid=aid)
         if del_obj:
-            del_obj.update(status=0)
+            try:
+                del_obj.update(status=0)
+            except Exception as e:
+                logger.error(e)
+                self.res.update(code=GeneralCode.FAIL)
         return Response(self.res.data)

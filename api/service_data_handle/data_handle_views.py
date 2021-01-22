@@ -1,12 +1,14 @@
 """
 数据处理详情序列化
 """
+import logging
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from api import models
 from utils.code import ResMsg, GeneralCode
+
+logger = logging.getLogger("error")
 
 
 class DataDetailserializers(serializers.ModelSerializer):
@@ -36,6 +38,7 @@ class DataHandleAPI(APIView):
             ser = DataDetailserializers(instance=dobj, many=True)
             self.res.update(data=ser.data)
         except Exception as e:
+            logger.error(e)
             self.res.update(code=GeneralCode.FAIL)
         return Response(self.res.data)
 
@@ -77,6 +80,6 @@ class DataHandleAPI(APIView):
             else:
                 self.res.update(code=GeneralCode.INVALID_PARAMS)
         except Exception as e:
-            print(e)
+            logger.error(e)
             self.res.update(code=GeneralCode.INVALID_PARAMS)
         return Response(self.res.data)

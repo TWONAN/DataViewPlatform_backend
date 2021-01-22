@@ -1,15 +1,17 @@
 """
 登录视图，含极简校验
 """
+import logging
 from uuid import uuid4
-
+from django.db import transaction
 from django.http import HttpResponse
 from geetest import GeetestLib
 from rest_framework.response import Response
-
 from rest_framework.views import APIView
 from api import models
 from utils.code import ResMsg, GeneralCode
+
+logger = logging.getLogger("error")
 
 pc_geetest_id = 'b46d1900d0a894591916ea94ea91bd2c'
 pc_geetest_key = '36fc3fe98530eea08dfc6ce76e3d24c4'
@@ -41,11 +43,16 @@ class LoginAPI(APIView):
         if result:
             # 用户存在
             if user:
-                avatar = str(user.avatar)
-                uid = str(uuid4())
-                models.UserInfo.objects.update_or_create(username=username, pwd=pwd, defaults={'token': uid})
-                self.res.add_field("token", uid)
-                self.res.add_field("avatar", avatar)
+                try:
+                    with transaction.atomic():  # *-* 事务回滚 -*-
+                        avatar = str(user.avatar)
+                        uid = str(uuid4())
+                        models.UserInfo.objects.update_or_create(username=username, pwd=pwd, defaults={'token': uid})
+                        self.res.add_field("token", uid)
+                        self.res.add_field("avatar", avatar)
+                except Exception as e:
+                    logger.error(e)
+                    self.res.update(code=GeneralCode.FAIL)
             # 不存在用户
             elif not name_obj:
                 self.res.update(code=GeneralCode.USERNAME_ERROR)
