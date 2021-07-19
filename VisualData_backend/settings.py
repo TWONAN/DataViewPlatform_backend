@@ -131,3 +131,45 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
     # 'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
+
+# 配置日志
+LOGGING = {
+    'version': 1,  # 使用的python内置的logging模块，那么python可能会对它进行升级，所以需要写一个版本号，目前就是1版本
+    'disable_existing_loggers': False,  # 是否去掉目前项目中其他地方中以及使用的日志功能，但是将来我们可能会引入第三方的模块，里面可能内置了日志功能，所以尽量不要关闭。
+    'formatters': {  # 日志记录格式
+        'verbose': {  # levelname等级，asctime记录时间，module表示日志发生的文件名称，lineno行号，message错误信息
+            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
+        },
+    },
+    'handlers': {
+        'visit_handlers': {  # visit_handlers : 标识（名字）
+            'level': 'INFO',  # 日志等级
+            'maxBytes': 5 * 1024 * 1024,  # 文件大小 - 这里是文件到 5M 会自动清空
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/visit.log',  # 日志存储文件
+            'formatter': 'verbose',
+        },
+        'error_handlers': {
+            'level': 'ERROR',
+            'maxBytes': 5 * 1024 * 1024,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/error.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'visit': {
+            'handlers': ['visit_handlers'],  # 使用哪个 handlers
+            'level': 'INFO',  # 日志等级，这里的等级要比 handlers 要高或者一致
+            'propagate': False,
+        },
+        'error': {
+            'handlers': ['error_handlers'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
